@@ -1,0 +1,60 @@
+{
+  "name": "trip-manager",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "DATABASE_URL=${DATABASE_URL:-file:./dev.db} prisma generate && DATABASE_URL=${DATABASE_URL:-file:./dev.db} next build",
+    "start": "next start",
+    "worker": "tsx src/worker/index.ts",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma",
+    "prisma:generate:postgres": "prisma generate --schema prisma/schema.postgres.prisma",
+    "prisma:migrate": "DATABASE_URL=${DATABASE_URL:-file:./dev.db} prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:push": "DATABASE_URL=${DATABASE_URL:-file:./dev.db} prisma db push --schema prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema prisma/schema.postgres.prisma",
+    "test": "vitest run",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.29.7",
+    "@googleapis/calendar": "^9.0.0",
+    "@prisma/client": "^5.22.0",
+    "@stylexjs/stylex": "^0.9.3",
+    "bullmq": "^5.34.1",
+    "date-fns": "^4.1.0",
+    "ioredis": "^5.4.1",
+    "lucide-react": "^0.468.0",
+    "mailparser": "^3.7.2",
+    "next": "16.2.11",
+    "openai": "^4.73.1",
+    "pino": "^10.3.1",
+    "prisma": "^5.22.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "resend": "^4.0.1",
+    "telegraf": "^4.16.3",
+    "tsx": "^4.19.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@stylexjs/babel-plugin": "^0.9.3",
+    "@stylexjs/postcss-plugin": "^0.19.0",
+    "@types/mailparser": "^3.4.5",
+    "@types/node": "^22.10.2",
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "autoprefixer": "^10.5.4",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "msgpackr-extract",
+      "prisma",
+      "sharp"
+    ]
+  }
+}

@@ -1,0 +1,213 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TripStatus {
+  PLANNING
+  BOOKED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum ItemType {
+  FLIGHT
+  HOTEL
+  TRANSPORT
+  ACTIVITY
+  DINING
+  GENERIC_BOOKING
+  NOTE
+}
+
+enum ProcessingStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  NEEDS_REVIEW
+  DUPLICATE
+  FAILED
+  LINKED_MANUALLY
+}
+
+enum NotificationType {
+  EMAIL_PROCESSED
+  EMAIL_REVIEW_REQUIRED
+  EMAIL_FAILED
+  REMINDER
+  SYSTEM
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Trip {
+  id          String          @id @default(cuid())
+  title       String
+  destination String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  status      TripStatus      @default(PLANNING)
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  items       ItineraryItem[]
+  emails      EmailArtifact[]
+}
+
+model ItineraryItem {
+  id              String               @id @default(cuid())
+  tripId          String
+  trip            Trip                 @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  type            ItemType
+  title           String
+  provider        String?
+  confirmation    String?
+  startsAt        DateTime?
+  endsAt          DateTime?
+  timezone        String?
+  locationName    String?
+  address         String?
+  notes           String?
+  raw             Json?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  calendarEvent   CalendarSyncRecord?
+  reminders       Reminder[]
+  extractionItems ExtractionRunItem[]
+}
+
+model EmailArtifact {
+  id             String             @id @default(cuid())
+  messageId      String?
+  contentHash    String             @unique
+  fromAddress    String?
+  subject        String?
+  receivedAt     DateTime?
+  rawPath        String
+  textPreview    String?
+  status         ProcessingStatus   @default(PENDING)
+  tripId         String?
+  trip           Trip?              @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  error          String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  attachments    EmailAttachment[]
+  extractionRuns ExtractionRun[]
+  notifications  Notification[]
+
+  @@index([messageId])
+  @@index([status])
+}
+
+model EmailAttachment {
+  id        String        @id @default(cuid())
+  emailId   String
+  email     EmailArtifact @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  filename  String
+  mimeType  String?
+  path      String
+  size      Int?
+  createdAt DateTime      @default(now())
+}
+
+model ExtractionRun {
+  id          String              @id @default(cuid())
+  emailId     String
+  email       EmailArtifact       @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  provider    String              @default("openai-compatible")
+  model       String?
+  status      ProcessingStatus    @default(PENDING)
+  confidence  Float?
+  result      Json?
+  error       String?
+  createdAt   DateTime            @default(now())
+  completedAt DateTime?
+  items       ExtractionRunItem[]
+}
+
+model ExtractionRunItem {
+  id              String        @id @default(cuid())
+  extractionRunId String
+  extractionRun   ExtractionRun @relation(fields: [extractionRunId], references: [id], onDelete: Cascade)
+  itemId          String
+  item            ItineraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  action          String
+  confidence      Float?
+}
+
+model CalendarSyncRecord {
+  id              String        @id @default(cuid())
+  itemId          String        @unique
+  item            ItineraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  googleCalendarId String
+  googleEventId   String
+  syncedAt        DateTime      @default(now())
+  lastError       String?
+}
+
+model TelegramChat {
+  id        String   @id @default(cuid())
+  chatId    String   @unique
+  label     String?
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reminder {
+  id        String        @id @default(cuid())
+  itemId    String
+  item      ItineraryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  remindAt  DateTime
+  channel   String        @default("telegram")
+  sentAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([remindAt, sentAt])
+}
+
+model Notification {
+  id        String             @id @default(cuid())
+  type      NotificationType
+  status    NotificationStatus @default(PENDING)
+  target    String?
+  message   String
+  emailId   String?
+  email     EmailArtifact?     @relation(fields: [emailId], references: [id], onDelete: SetNull)
+  error     String?
+  createdAt DateTime           @default(now())
+  sentAt    DateTime?
+
+  @@index([status, type])
+}
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model LocalQueueJob {
+  id          String    @id @default(cuid())
+  queue       String
+  name        String
+  data        String
+  status      String    @default("PENDING")
+  attempts    Int       @default(0)
+  error       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  processedAt DateTime?
+
+  @@index([queue, status, createdAt])
+}

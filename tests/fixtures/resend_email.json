@@ -1,0 +1,12 @@
+{
+  "type": "email.received",
+  "data": {
+    "id": "email_fixture_1",
+    "message_id": "fixture-message@example.com",
+    "from": "Klook <booking@example.com>",
+    "to": ["confirmations@example.com"],
+    "subject": "Booking confirmed",
+    "text": "Your airport transfer is confirmed for 2026-08-10.",
+    "created_at": "2026-07-22T12:00:00.000Z"
+  }
+}
