@@ -1,6 +1,7 @@
 FROM node:22-alpine AS base
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV CI=1
 
 FROM base AS deps
 RUN corepack enable
